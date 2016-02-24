@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+
+import cmd
+import subprocess
+from keyword import kwlist
+from pprint import pprint
+import sys
+
+class PythonUberShell(cmd.Cmd):
+    intro = '[[[ ::: Python Uber Shell ::: ]]]'
+    prompt = '$ '
+    
+    def do_globals(self, line):
+        pprint(globals())
+
+    def default(self, line):
+        """Generic handler for commands"""
+        cmdline = line.split()
+        # print(cmdline)
+        
+        # FIXME: this won't detect `fun(arg)` but will detect `fun (arg)`,
+        # because cmdline[0] in first case is whole function invokation,
+        # but globals() has "fun" as a key.
+        if (cmdline[0] in kwlist) or (cmdline[0] in globals()):
+            self._exec(line)
+            return False
+
+        try:
+            subprocess.check_call(cmdline)
+
+        except subprocess.CalledProcessError as e:
+            print('{cmd} returned {ret}, error: {err}'.format(
+                cmd=cmdline[0], ret=e.returncode, err=e.output))
+
+        except FileNotFoundError as e:
+            # If it's unknown command, maybe it's python code?
+            # FIXME: this is a workaround, try to make it robust
+            if not self._exec(line):
+                # Only if we've checked it's not python code, return error
+                print('push: {cmd}: no such command'.format(cmd=cmdline[0]))
+
+    def _exec(self, statement):
+        try:
+            exec(statement, globals())
+            return True
+        except:
+            exc_info = sys.exc_info()
+            print('Python evaluation error:',  exc_info[0])
+            return False
+
+    def emptyline(self):
+        """
+        Print empty line when user input is empty 
+        (default behaviour was repeat last command)
+        """
+        print(end='')
+
+    def do_EOF(self, line):
+        print()
+        return True
+
+if __name__ == '__main__':
+    PythonUberShell().cmdloop()
