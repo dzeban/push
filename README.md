@@ -34,6 +34,7 @@ Here is the quick example:
     $ # It's not only variables, but functions and loops and stuff!
     $ def show33(val): print(val + 33)
     $ show33(10)
+    43
     $ for i in range(3): show33(i)
     33
     34
